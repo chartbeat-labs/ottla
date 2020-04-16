@@ -1,12 +1,37 @@
 # Ottla
-
 A small, but opinionated framework and library for writing kafka 
 consumers and producers in clojure.
 
-Ottla is designed to build kafka pipelines where each consumer is assigned a
-static set of partitions to read from for each topic. 
+> “Knowledge must seep into your blood, into your self, not just into your head, you must live it.”
+― Franz Kafka, Letters to Ottla and the Family
+
+Ottla is designed to build kafka pipelines where a consumer is assigned a
+static set of partitions for a topic. 
+
+## Motivation
+
+Ottla was initially built at Chartbeat for kafka 9 in order to give us a consistent way of building high perforamnce single purpose kafka consumers. One of the first issues we tried to solve was the inconsistent performance of consumer group re-balancing. Automatic distribution of load across a consumer group is a great feature of kafka in many use-cases but it can lead to a cascade of lag in others. When traffic is consistent across partitions and throughput is the most important feature of a system, it can become the worst kind of bottle-neck -- a black box. 
+
+Ottla (being opinionated) makes a few important design decisions for you. It's entirely possible that it's not a good fit for your use-case and that's ok! There are a lot of great frameworks for kafka, even in clojure. 
+
+1. There is a single consumer bound to a static list of partitions in a single topic (no streaming joins)
+2. The messages from kafka are consumed in micro-batches
+3. The kafka client is a clojure record (or another object that implements the ottla protocol)
+4. Exactly-once or guaranteed delivery semantics is not as important as throughput and simplicity
+
+In the world of streaming data pipelines there are many design patterns that have been adopted. One main differentiator is the concept of the system topology as a single deployable entity (as I first saw with Apache Storm http://storm.apache.org/) or as a set of individual components (as in Apache Samza http://samza.apache.org/). Note: I haven't used either of these in a number of years so it's possible that they've changed. We have adopted the individual component model for a number of reasons, most importantly it makes it much easier to iterate on the pipeline and to develop new components for sub-topologies. This is why we consider each Ottla component to be single purpose and tied to a single kafka topic. A component does not care who else reads from a topic, who put the data into the topic or why. 
+
+The biggest disadvantage that someoone might find with our design is the lack of support for joining between two kafka topics. This is actually something that we rarely find a need for. Generally our pattern for solving those sorts of use-cases is to have a consumer write data into a database with a time index and another consumer to join against that. If that doesn't work for you, I suggest kafka streams!
+
 
 ## Usage
+
+Ottla consumers are simple. 
+
+1. Define a record implementing the ottla protocols (the "machine")
+2. Implement the init funciton to set up your consumer
+3. Implement the step function to do something with each batch of data
+4. Implement a main method that passes the configuration to your ottla machine
 
 ```clojure
 (ns foo
@@ -36,14 +61,11 @@ static set of partitions to read from for each topic.
   ;; maps each representing a message from the consumer (msgs) and returns a
   ;; newly updated FooMachine.
   (step [this msgs]
-
     (doseq [{k :key v :value} msgs]
       (memecached/set (:memcached-client this) k v))
-
     (let [batch-count (+ (:batch-count this) 1)
           _ (logging/info "I have processed %d batches" batch-count)
           this (assoc :batch-count batch-count)]
-
       this)))
 
 (defn -main
@@ -185,6 +207,9 @@ cluster.
 
 ```
 
-## AUTHORS
+## Testing
+
+## Authors
+
 ## TODO
 
