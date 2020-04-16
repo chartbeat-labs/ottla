@@ -5,6 +5,7 @@
             [clojure.tools.logging :as log]
             [clojurewerkz.propertied.properties :as p])
   (:import [java.util Properties]
+           [org.apache.kafka.clients.producer Producer]
            [org.apache.kafka.clients.producer KafkaProducer]
            [org.apache.kafka.clients.producer ProducerConfig]
            [org.apache.kafka.clients.producer ProducerRecord]))
@@ -129,16 +130,16 @@
 
   Returns a future which, after write happens, contains a RecordMetadata. To
   ensure write to topic, flush! must be called."
-  ([^KafkaProducer prdcr ^String topic key value]
+  ([^Producer prdcr ^String topic key value]
    (.send prdcr (ProducerRecord. topic key value)))
-  ([^KafkaProducer prdcr ^String topic ^Integer partition key value]
+  ([^Producer prdcr ^String topic ^Integer partition key value]
    (.send prdcr (ProducerRecord. topic partition key value))))
 
 
 (defn flush!
   "Makes all buffered records immediately available to send (even if linger.ms
   is greater than 0) and blocks until complete."
-  [^KafkaProducer prdcr]
+  [^Producer prdcr]
   (.flush prdcr))
 
 
