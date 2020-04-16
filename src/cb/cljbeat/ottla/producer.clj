@@ -147,7 +147,7 @@
   "Combines send! and flush! to send a batch of messages defined by a seq of
   maps that each have a :topic, :key, :value and optionally a :partition to put the message on.
   "
-  [prdcr messages]
+  [^Producer prdcr messages]
   (let [;; send! each message, this gives us a not-lazy seq of futures
         sent (->> (for [{t :topic p :partition k :key v :value} messages]
                     (if (some? p)
@@ -159,6 +159,6 @@
     ;; be buffered)
     (flush! prdcr)
 
-    ;; deref the futures which ensures the writes happend and exposes the
+    ;; block on completion of futures to ensures the writes happend and expose the
     ;; RecordMetadatas to the user
     (mapv deref sent)))
