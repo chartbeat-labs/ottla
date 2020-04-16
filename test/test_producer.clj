@@ -2,7 +2,10 @@
   (:require [clojure.pprint :refer [pprint]]
             [clojure.test :refer :all]
             [cb.cljbeat.ottla.producer :as producer])
-  (:import (java.util ArrayList Collection)
+  (:import (java.util ArrayList Collection Collections)
+           (org.apache.kafka.common Cluster)
+           (org.apache.kafka.common Node)
+           (org.apache.kafka.common PartitionInfo)
            (org.apache.kafka.clients.producer ProducerRecord)
            (org.apache.kafka.clients.producer MockProducer)))
 
@@ -15,6 +18,13 @@
 
 (def TestTopicProducer
     (producer/producer {:bootstrap.servers "foo01:9092" :client.id "test-client"}))
+
+; (def test-cluster
+;   (let [
+;     nodes (vector (Node. 0 "localhost" 1000) (Node. 1 "localhost" 2000))
+;     partitions (vector (PartitionInfo. "test-topic" (int 0) (get 0 nodes) (into-array Node nodes) (into-array Node nodes)))]
+        
+;     (Cluster. 1 nodes partitions (Collections/emptyList) (Collections/emptyList))))
 
 (defn send-message-batch [producer-dest list-of-messages]
   (do 
@@ -48,12 +58,13 @@
       (is (= 1 (count partition-1-messages)))))
       
  (testing "Different Partitions"
-   (let [test-producer (MockProducer.)
+   (let [test-producer (MockProducer.); (Cluster/empty) true nil nil nil)
      messages [
        {:topic "test-topic-1" :partition (int 0) :key "foo" :valus "bar"} 
        {:topic "test-topic-1" :partition (int 1) :key "foo" :valus "bar"} 
        {:topic "test-topic-2" :partition (int 0) :key "bar" :value "foo"}]
      sent-messages (send-message-batch test-producer messages)
+     _ (println "Partitions: " (for [m sent-messages] (.topic m)))
      history (.history test-producer)
      topic-2-messages (filter #(= "test-topic-2" (.topic %)) history)
      topic-1-messages (filter #(= "test-topic-1" (.topic %)) history)]
@@ -64,12 +75,12 @@
       
   (testing "Auto Partitioning"
     (let [test-producer (MockProducer.)
+      ;test-producer (MockProducer. test-cluster true nil nil nil)
       messages [
         {:topic "test-topic" :key "foo" :valus "bar"} 
         {:topic "test-topic" :key "foo" :valus "bar"}]
       sent-messages (send-message-batch test-producer messages)
-      history (.history test-producer)
-      _ (println "HISTORY: " history)
-      _ (println "SENT: " sent-messages)]
+      history (.history test-producer)]
+      ;sent-partitions (for [m sent-messages] (.topic m))
       
-    (is (= 0 (.partition (first history)))))))
+    (is (= 0 (.partition (first sent-messages)))))))
