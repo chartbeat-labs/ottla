@@ -137,7 +137,6 @@ commands such as...
 (do (use '[cb.hound] :reload-all) (.step (.init (HoundMachine.) {:value-unpacker "count"}) msgs))
 ```
 
-
 ## Producers
 
 One nice way to use producers is to just interact with an async channel. Really you should only have one instance of the kafka producer
@@ -177,7 +176,6 @@ cluster.
           
           (defrecord DoppelgangerMachine []
             ottla/OttlaMachine
-          
             (init [this options]
               (assoc this
                 :hosts (:hosts options)))
@@ -210,6 +208,15 @@ cluster.
 ## Testing
 
 ## Authors
+
+Ottla was spun out of the Chartbeat repo and has been worked on by (in commit order):
+
+- https://github.com/x 
+- https://github.com/rmangi
+- https://github.com/butlern
+- https://github.com/foodneutrino
+
+And countless others who have used the framework and provided feedback
 
 ## TODO
 
