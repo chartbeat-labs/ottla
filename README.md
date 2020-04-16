@@ -28,10 +28,11 @@ The biggest disadvantage that someoone might find with our design is the lack of
 
 Ottla consumers are simple. 
 
-1. Define a record implementing the ottla protocols (the "machine")
+1. Define a record implementing the `OttlaMachine` protocol (the "machine")
 2. Implement the init funciton to set up your consumer
 3. Implement the step function to do something with each batch of data
 4. Implement a main method that passes the configuration to your ottla machine
+5. If you don't to auto-commit after every step, implement a commit function (and extend `ManualCommittingOttlaMachine` )
 
 ```clojure
 (ns foo
@@ -44,10 +45,9 @@ Ottla consumers are simple.
 (def cli-options
   [["-m" "--memcached-cluster HOST:PORT" "..."]])
 
-;; Create a record which impliments the AutocommittingOttlaMachine protocol.
+;; Create a record which impliments the OttlaMachine protocol.
 (defrecord FooMachine []
   ottla/OttlaMachine
-  ottla/AutocommittingOttlaMachine
   ;; Define an init function that runs once with the FooMachine (this) and the
   ;; parsed command-line options (options) and returns the newly initalized
   ;; FooMachine (a record which can be treated like an immutable hash-map).
@@ -77,23 +77,23 @@ Ottla consumers are simple.
 
 ## Ottla Protocols
 
-Ottla defines a main protocol, `OttlaMachine` and additional protocols which
-define specific behavior. 
+Ottla defines a main protocol, `OttlaMachine` and additionally an optional `ManualCommittingOttlaMachine` protocol
+for cases where you don't want auto-commits after every step.
 
-Currently, this is used to define offset commit behavior. 
-Ottla exposes two protocols you can implement, `AutocommitingOttlaMachine` and
-`ManualCommittingOttlaMachine`.
+Then the `step` function takes `this` and
+`msgs`. At the end of the `step` function, ottla commits the messages.
 
-If you implement the former, then the `step` function only takes `this` and
-`msgs`. At the end of the `step` function, ottla will commit the messages.
-
-If you instead implement `ManualCommittingOttlaMachine`, `step` takes `this`,
-`msgs`, and `cnsmr` (the `KafkaConsumer` object) that you can manually call
+If you dont want auto-commits, implement `ManualCommittingOttlaMachine` as well which adds a `commit!` funciton which takes `this` and `cnsmr` (the `KafkaConsumer` object) that you can manually call
 `cb.cljbeat.ottla.consumer/commmit!` on.
 
 A `ManualCommittingOttlaMachine` would be used if you'd rather
 "write-no-more-than-once" behavior than "write-at-least-once" behavior in your
 `step` function.
+
+IMPORTANT
+---------
+
+All OttlaMachine functions expect `this` (the machine itself) to be returned.
 
 ## Development In Repl
 
@@ -176,7 +176,7 @@ cluster.
             (select-keys ping [:topic :partition :key :value]))
           
           (defrecord DoppelgangerMachine []
-            ottla/AutocommittingOttlaMachine
+            ottla/OttlaMachine
           
             (init [this options]
               (assoc this

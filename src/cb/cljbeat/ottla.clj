@@ -24,31 +24,33 @@
     :validate [not-empty "Must not be empty"]]])
 
 
-(defprotocol OttlaMachine 
+(defprotocol OttlaMachine
   (init [this cli-options]
     "Given a map of cli-options, inits the machine.")
-  (step [this msgs] [this msgs cnsmr]
-        "Given a list of msgs, updates the machine."))
+  (step [this msgs] "Given a list of msgs, updates the machine."))
 
-(defprotocol AutocommittingOttlaMachine)
-(defprotocol ManualCommittingOttlaMachine)
+(defprotocol ManualCommittingOttlaMachine
+  (commit! [this cnsmr] "commit the current offsets, by default this happens after every step"))
 
-(derive ::AutocommittingOttlaMachine ::OttlaMachine)
-(derive ::ManualCommittingOttlaMachine ::OttlaMachine)
 
-(defmulti step-strategy ::OttlaMachine)
+(defmulti -step-and-commit! (fn [this cnsmr timeout] (satisfies? ManualCommittingOttlaMachine this)))
 
-(defmethod step-strategy ::ManualCommittingOttlaMachine [machine cnsmr timeout]
+; default implementation
+
+(defn -commit! [this cnsmr]
+  (consumer/commit! cnsmr)
+  this)
+
+(defmethod -step-and-commit! true [machine cnsmr timeout]
+  (let [msgs (consumer/poll! cnsmr timeout)]
+    (step machine msgs)))
+
+(defmethod -step-and-commit! false
   [machine cnsmr timeout]
   (let [msgs (consumer/poll! cnsmr timeout)]
-    (.step machine msgs cnsmr)))
-
-(defmethod step-strategy ::AutocommittingOttlaMachine [machine cnsmr timeout]
-  [machine cnsmr timeout]
-  (let [msgs (consumer/poll! cnsmr timeout)
-        machine (.step machine msgs)]
-    (consumer/commit! cnsmr)
-    machine))
+    (-> machine
+        (step msgs)
+        (-commit! cnsmr))))
 
 (defn start
   "Parses args and starts an ottla-machine."
@@ -61,8 +63,7 @@
     ;; set uncaught thread exception handling
    (sys/set-default-uncaught-exception-handler!)
 
-   (let [
-         ;; create the state that the user wants from the init fn
+   (let [;; create the state that the user wants from the init fn
          machine (.init machine opts)
 
          ;; create --ottla.parallelism number of consumers, default is 1
@@ -78,7 +79,7 @@
      (if (not (opts :ottla.manual.mode))
        (doseq [cnsmr cnsmrs]
          (.. (Thread. #(loop [machine machine]
-                         (recur (step-strategy machine cnsmr (opts :ottla.poll.timeout)))))
+                         (recur (-step-and-commit! machine cnsmr (opts :ottla.poll.timeout)))))
              (start)))
        machine))))
 
