@@ -107,11 +107,14 @@
 (defn producer
   [props]
   (let [;; apply defaults, java-fy props, allow keyword keys
+        _ (println "PROPS 0")
         props (walk/stringify-keys props)
+        _ (println "PROPS 1")
         props (into PRODUCER_DEFAULT_PROPS props)
-        ;; create the producer
-        prdcr (KafkaProducer. (p/load-from props))]
-    prdcr))
+        _ (println "PROPS 2")]
+    (do
+      (println "PRODUCER") 
+      (KafkaProducer. (p/load-from props)))))
 
 
 (defn send!
