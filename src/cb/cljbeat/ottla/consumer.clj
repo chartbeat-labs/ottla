@@ -185,7 +185,7 @@
 (defn poll!
   "Light wrapper arround KafkaConsumer.poll. 
    Returns a lazy seq of maps"
-  ([cnsmr]
+  ([^Consumer cnsmr]
    (poll! cnsmr DEFAULT_POLL_TIMEOUT_MS))
   ([^Consumer cnsmr ^long timeout-ms]
    (->> (.poll cnsmr (Duration/ofMillis timeout-ms))

@@ -52,7 +52,6 @@
           messages ["foo" "bar"]
           cnsmr (consumer/consumer {:group.id "foo" :bootstrap.servers "foo01:9092"} "foo" [0])
           cnsmr (add-messages cnsmr messages)
-          ;msgs (consumer/poll! cnsmr 1000)
           part (TopicPartition. "foo" (Long. 0))
           machine (ottla/-step-and-commit! machine cnsmr 100)]
       (is (= (:counter machine) 2))
@@ -62,7 +61,6 @@
           messages ["foo" "bar"]
           cnsmr (consumer/consumer {:group.id "foo" :bootstrap.servers "foo01:9092"} "foo" [0])
           cnsmr (add-messages cnsmr messages)
-          ;msgs (consumer/poll! cnsmr 1000)
           machine (ottla/-step-and-commit! machine cnsmr 100)
           part (TopicPartition. "foo" (Long. 0))]
       (is (= (:counter machine) 2))

@@ -1,7 +1,8 @@
 (ns cb.cljbeat.ottla.cli
   "Top-level namespace where all public API functions live. See README for
   example usage."
-  (:require [clojure.tools.cli :as cli]
+  (:require [clojure.string :as st]
+            [clojure.tools.cli :as cli]
             [clojure.tools.logging :as log]))
 
 
@@ -10,7 +11,7 @@
 
 
 (defn comma-str-list->long-list [s]
-  (map str->long (clojure.string/split s #",")))
+  (map str->long (st/split s #",")))
 
 
 (defn parse-opts
@@ -36,12 +37,12 @@
   [configurables options]
   (let [lookup (into {} (map (juxt :long-opt :prop) configurables))]
     (reduce
-      (fn [props [opt-k opt-v]]
-        (if-let [prop-k (lookup (name opt-k))]
-          (assoc props prop-k opt-v)
-          props))
-      {}
-      options)))
+     (fn [props [opt-k opt-v]]
+       (if-let [prop-k (lookup (name opt-k))]
+         (assoc props prop-k opt-v)
+         props))
+     {}
+     options)))
 
 
 (defn configurable-map->cli-opt-vect

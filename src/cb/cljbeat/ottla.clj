@@ -33,27 +33,25 @@
   (commit! [this cnsmr] "commit the current offsets, by default this happens after every step"))
 
 
+; this allows us to have a default implementation of commit behavior
+; without having to add an un-used commit! method to the base protocol
 (defmulti -step-and-commit! (fn [this cnsmr timeout] (satisfies? ManualCommittingOttlaMachine this)))
 
-; default implementation
-
-(defn -commit! [this cnsmr]
-  (consumer/commit! cnsmr)
-  this)
-
+; manual implementation doesn't commit
 (defmethod -step-and-commit! true [machine cnsmr timeout]
   (let [msgs (consumer/poll! cnsmr timeout)]
     (step machine msgs)))
 
+; default implementation steps and then commits
 (defmethod -step-and-commit! false
   [machine cnsmr timeout]
   (let [msgs (consumer/poll! cnsmr timeout)]
     (-> machine
         (step msgs)
-        (-commit! cnsmr))))
+         (consumer/commit! cnsmr))))
 
 (defn start
-  "Parses args and starts an ottla-machine."
+  "Parses args and starts an OttlaMachine."
   ([machine args cli-options]
    (start machine (cli/parse-opts args (into #{} (concat OTTLA_CLI_OPTIONS
                                                          consumer/CONSUMER_CLI_OPTIONS
@@ -61,6 +59,7 @@
   ([machine opts]
 
     ;; set uncaught thread exception handling
+    ;; @TODO allow this to be configured
    (sys/set-default-uncaught-exception-handler!)
 
    (let [;; create the state that the user wants from the init fn
@@ -83,7 +82,9 @@
              (start)))
        machine))))
 
-(defn start-producer "parses args and returns a new producer"
+;; producer functions
+(defn start-producer 
+  "parses args and returns a new producer"
   ([args cli-options]
    (start-producer (cli/parse-opts args (into #{} (concat OTTLA_CLI_OPTIONS
                                                           producer/PRODUCER_CLI_OPTIONS
@@ -104,8 +105,9 @@
 
 
 (defn start-async-producer
-  "Handler is a function that converts a message from the channel to a kafka message. This function must return a map
-  containing :topic :key :value or :topic :partition :key :value as per producer/send-and-flush-batch"
+  "Handler is a function that converts a message from the channel into a kafka message. 
+  This function must return a map containing {:topic :key :value} or {:topic :partition :key :value}
+  as per producer/send-and-flush-batch"
   ([args cli-options handler]
    (-async-producer-loop (start-producer args cli-options) handler))
   ([opts handler]
