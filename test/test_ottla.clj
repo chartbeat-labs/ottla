@@ -44,7 +44,8 @@
     (update this :counter + (count msgs)))
   ottla/ManualCommittingOttlaMachine
   (commit! [this cnsmr]
-    (ottla/-commit! this cnsmr)))
+    (consumer/commit! cnsmr)
+    this))
 
 (deftest test-basic-machine []
   (testing "does the machine work"

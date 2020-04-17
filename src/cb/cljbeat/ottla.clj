@@ -45,10 +45,10 @@
 ; default implementation steps and then commits
 (defmethod -step-and-commit! false
   [machine cnsmr timeout]
-  (let [msgs (consumer/poll! cnsmr timeout)]
-    (-> machine
-        (step msgs)
-         (consumer/commit! cnsmr))))
+  (let [msgs (consumer/poll! cnsmr timeout)
+        machine (step machine msgs)]
+    (consumer/commit! cnsmr)
+    machine))
 
 (defn start
   "Parses args and starts an OttlaMachine."

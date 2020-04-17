@@ -10,19 +10,27 @@ static set of partitions for a topic.
 
 ## Motivation
 
-Ottla was initially built at Chartbeat for kafka 9 in order to give us a consistent way of building high perforamnce single purpose kafka consumers. One of the first issues we tried to solve was the inconsistent performance of consumer group re-balancing. Automatic distribution of load across a consumer group is a great feature of kafka in many use-cases but it can lead to a cascade of lag in others. When traffic is consistent across partitions and throughput is the most important feature of a system, it can become the worst kind of bottle-neck -- a black box. 
+Ottla was initially built at Chartbeat for kafka 9 to give us a consistent way of building high performance single purpose kafka consumers. One of the first issues we tried to solve was the inconsistent performance of consumer group re-balancing. Automatic distribution of load across a consumer group is a great feature of kafka in many use-cases but it can lead to a cascade of lag in others. When traffic is consistent across partitions and throughput is the most important feature of a system, it can become the worst kind of bottle-neck -- a black box. Frequent stalling in the consumers became known as the "kafka offset dance". A lot of that has been improved in more recent versions of kafka, but we also found that manually assigning partitions had many advantages and we have stuck with it.
 
 Ottla (being opinionated) makes a few important design decisions for you. It's entirely possible that it's not a good fit for your use-case and that's ok! There are a lot of great frameworks for kafka, even in clojure. 
 
 1. There is a single consumer bound to a static list of partitions in a single topic (no streaming joins)
+    - by default, ottla runs from the command line and expects to be starting a single blocking consumer. You don't *need* to do this but that's the intention. 
 2. The messages from kafka are consumed in micro-batches
+    - ottla loops continuously over a step function that grabs a batch of messages and processes them. You can do whatever you want with each batch, but there are no semantics for getting one message at a time from the broker.
 3. The kafka client is a clojure record (or another object that implements the ottla protocol)
+    - this fits in nicely with component or other similar libraries
 4. Exactly-once or guaranteed delivery semantics is not as important as throughput and simplicity
+    - ottla was designed for high throughput. You can commit offsets manually whenever you want but by default it takes a batch and commits when it's done. If the consumer crashes for some reason mid-processing, messages will be reprocessed from the last committed offset.
 
-In the world of streaming data pipelines there are many design patterns that have been adopted. One main differentiator is the concept of the system topology as a single deployable entity (as I first saw with Apache Storm http://storm.apache.org/) or as a set of individual components (as in Apache Samza http://samza.apache.org/). Note: I haven't used either of these in a number of years so it's possible that they've changed. We have adopted the individual component model for a number of reasons, most importantly it makes it much easier to iterate on the pipeline and to develop new components for sub-topologies. This is why we consider each Ottla component to be single purpose and tied to a single kafka topic. A component does not care who else reads from a topic, who put the data into the topic or why. 
+In the world of streaming data pipelines there are many design patterns that have been adopted. One main differentiator is the concept of the system topology as a single deployable entity (as I first saw with Apache Storm http://storm.apache.org/) or as a set of individual components (as in Apache Samza http://samza.apache.org/). Note: I haven't used either of these in a number of years so it's possible that they've changed. We have adopted the individual component model for a number of reasons, most importantly it makes it much easier to iterate on the pipeline and to develop new components for sub-topologies. This is why we consider each Ottla component to be single purpose and tied to a single kafka topic. A component does not care who else reads from a topic, who put the data into the topic or why. Each consumer is a cog in the machine. Consumers either read from a topic and write to another one (or more than one) after doing some sort of transformation or they read from a topic and write to a data sink of some sort.
 
-The biggest disadvantage that someoone might find with our design is the lack of support for joining between two kafka topics. This is actually something that we rarely find a need for. Generally our pattern for solving those sorts of use-cases is to have a consumer write data into a database with a time index and another consumer to join against that. If that doesn't work for you, I suggest kafka streams!
+The biggest disadvantage that someoone might find with our design is the lack of support for joining between two kafka topics. This is actually something that we rarely find a need for. You could use ottla to do this but there are better ways. Generally our pattern for solving those sorts of use-cases is to have a consumer write data into a database with a time index and another consumer to join against that. If that doesn't work for you, I suggest kafka streams!
 
+
+### What Ottla is Not
+
+Ottla is not a wrapper around the kafka consumer api in clojure. If you want to build your own special purpose framework for working with kafka in clojure there are several mature libraries that provide a nice idiomatic api over all of kafka, this is not it. I could see ottla integrating with one of those libraries in the future, but for now we're just calling the java objects directly.
 
 ## Usage
 
@@ -209,12 +217,17 @@ cluster.
 
 ## Authors
 
-Ottla was spun out of the Chartbeat repo and has been worked on by (in commit order):
+Ottla was spun out of the Chartbeat repo and owes its thanks to the entire company.
 
-- https://github.com/x 
-- https://github.com/rmangi
-- https://github.com/butlern
-- https://github.com/foodneutrino
+Maintainer: 
+- Rick Mangi https://github.com/rmangi
+
+Original Author
+- Devon Peticolas https://github.com/x 
+
+Contributors
+- Nathan Butler https://github.com/butlern
+- David Labarbera https://github.com/foodneutrino
 
 And countless others who have used the framework and provided feedback
 
