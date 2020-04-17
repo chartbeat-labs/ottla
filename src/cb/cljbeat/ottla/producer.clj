@@ -108,14 +108,9 @@
 (defn producer
   [props]
   (let [;; apply defaults, java-fy props, allow keyword keys
-        _ (println "PROPS 0")
         props (walk/stringify-keys props)
-        _ (println "PROPS 1")
-        props (into PRODUCER_DEFAULT_PROPS props)
-        _ (println "PROPS 2")]
-    (do
-      (println "PRODUCER") 
-      (KafkaProducer. (p/load-from props)))))
+        props (into PRODUCER_DEFAULT_PROPS props)]
+      (KafkaProducer. (p/load-from props))))
 
 
 (defn send!
@@ -131,9 +126,9 @@
   Returns a future which, after write happens, contains a RecordMetadata. To
   ensure write to topic, flush! must be called."
   ([^Producer prdcr ^String topic key value]
-   (.send prdcr (ProducerRecord. topic key value)))
+    (.send prdcr (ProducerRecord. topic key value)))
   ([^Producer prdcr ^String topic ^Integer partition key value]
-   (.send prdcr (ProducerRecord. topic partition key value))))
+    (.send prdcr (ProducerRecord. topic partition key value))))
 
 
 (defn flush!
