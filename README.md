@@ -136,7 +136,7 @@ function, reload the code, and test again.
 	cb.hound=> (use '[cb.hound] :reload-all)
 	nil
 	```
-8. Repeate from step 2.
+8. Repeat from step 2.
 
 
 The reloading and recreating of the machine can be consolidated into single-line
@@ -233,3 +233,9 @@ And countless others who have used the framework and provided feedback
 
 ## TODO
 
+- more tests
+- document how to write tests
+- document usage with component
+- separate cli usage to make it easier to use as a library
+- standardize common patterns i.e. aggregation, deserialization, possibly as protocols
+- enable custom error handling

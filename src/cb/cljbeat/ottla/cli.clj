@@ -1,18 +1,15 @@
 (ns cb.cljbeat.ottla.cli
-  "Top-level namespace where all public API functions live. See README for
-  example usage."
+  "Tools for working with ottla from the command line.
+  This should all be made optional since not everybody is going to be using it that way, possibly with spec."
   (:require [clojure.string :as st]
             [clojure.tools.cli :as cli]
             [clojure.tools.logging :as log]))
 
-
 (defn str->long [s]
   (Long/parseLong s))
 
-
 (defn comma-str-list->long-list [s]
   (map str->long (st/split s #",")))
-
 
 (defn parse-opts
   "Parses cli-options."
@@ -29,7 +26,6 @@
       (log/warn (clojure.string/join "\n" errors)))
     options))
 
-
 (defn extract-props-from-options
   "Given the list of options parsed from the command-line using the long-opt
   names described in CONSUMER_CONFIGURABLES or PRODUCER_CONFIGURABLES, parses
@@ -43,7 +39,6 @@
          props))
      {}
      options)))
-
 
 (defn configurable-map->cli-opt-vect
   "Given a map from CONSUMER_CONFIGURABLES or PRODUCER_CONFIGURABLES returns a

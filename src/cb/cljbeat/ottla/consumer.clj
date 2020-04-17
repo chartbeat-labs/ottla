@@ -10,11 +10,9 @@
            [org.apache.kafka.common TopicPartition]
            [org.apache.kafka.clients.consumer Consumer KafkaConsumer ConsumerRecord]))
 
-
 (def DEFAULT_POLL_TIMEOUT_MS
   "Default timeout in ms for poll."
   1000)
-
 
 (def CONSUMER_CONFIGURABLES
   "Consumer options defined and mapped into CONSUMER_DEFAULT_PROPS (used by
@@ -113,8 +111,6 @@
     :desc  "The timeout configures the maximum amount of time a consumer will wait for a broker response"
     :default "30000"}])
 
-
-
 (def CONSUMER_DEFAULT_PROPS
   "The map of default properties created from CONSUMER_CONFIGURABLES"
   (into {} (map (juxt :prop :default) CONSUMER_CONFIGURABLES)))
@@ -156,7 +152,6 @@
         cnsmr (-make-consumer props parts)]
     cnsmr))
 
-
 (defn consumers
   "Like consumer, but returns a vector of n consumers with partitions, parts,
   split evenly among them. See consumer."
@@ -168,7 +163,7 @@
     ;; interestingly, partiton-all accepts floats and
     ;; ceils them which is what we want
     (mapv #(consumer props topic %)
-          (partition-all parts-per-cnsmr parts)))) 
+          (partition-all parts-per-cnsmr parts))))
 
 
 (defn- ConsumerRecord->hash-map
@@ -181,7 +176,6 @@
    :key       (.key rec)
    :value     (.value rec)})
 
-
 (defn poll!
   "Light wrapper arround KafkaConsumer.poll. 
    Returns a lazy seq of maps"
@@ -190,7 +184,6 @@
   ([^Consumer cnsmr ^long timeout-ms]
    (->> (.poll cnsmr (Duration/ofMillis timeout-ms))
         (map ConsumerRecord->hash-map))))
-
 
 (defn commit!
   "Light wrapper around KafkaConsumer.commitSync. Commits the youngest offset

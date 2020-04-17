@@ -1,11 +1,9 @@
 (ns test_ottla
-  (:require [clojure.pprint :refer [pprint]]
-            [clojure.test :refer :all]
+  (:require [clojure.test :refer :all]
             [cb.cljbeat.ottla :as ottla]
             [cb.cljbeat.ottla.consumer :as consumer])
   (:import (org.apache.kafka.clients.consumer ConsumerRecord MockConsumer OffsetResetStrategy)
            (org.apache.kafka.common TopicPartition)))
-
 
 (defn ^MockConsumer -make-mock-consumer [_ parts]
   (let [beginMap (reduce #(assoc %1 %2 (Long. 0)) {} parts)]

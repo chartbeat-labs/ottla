@@ -5,9 +5,7 @@
             [cb.cljbeat.ottla.cli :as cli]
             [cb.cljbeat.ottla.producer :as producer]
             [cb.cljbeat.ottla.sys :as sys]
-            [clojure.core.async :refer [<! chan go]]
-            [clojure.tools.logging :as log]))
-
+            [clojure.core.async :refer [<! chan go]]))
 
 (def OTTLA_CLI_OPTIONS
   "The options that are automagically included when you use defconsumer"
@@ -23,7 +21,6 @@
    ["-t" "--ottla.topic KAFKATOPIC" "Topic to consume from."
     :validate [not-empty "Must not be empty"]]])
 
-
 (defprotocol OttlaMachine
   (init [this cli-options]
     "Given a map of cli-options, inits the machine.")
@@ -31,7 +28,6 @@
 
 (defprotocol ManualCommittingOttlaMachine
   (commit! [this cnsmr] "commit the current offsets, by default this happens after every step"))
-
 
 ; this allows us to have a default implementation of commit behavior
 ; without having to add an un-used commit! method to the base protocol
@@ -83,7 +79,7 @@
        machine))))
 
 ;; producer functions
-(defn start-producer 
+(defn start-producer
   "parses args and returns a new producer"
   ([args cli-options]
    (start-producer (cli/parse-opts args (into #{} (concat OTTLA_CLI_OPTIONS
@@ -91,7 +87,6 @@
                                                           cli-options)))))
   ([opts]
    (producer/producer (producer/extract-props-from-options opts))))
-
 
 (defn -async-producer-loop
   [prdcr handler]
@@ -103,7 +98,6 @@
           (recur)))
     producer-channel))
 
-
 (defn start-async-producer
   "Handler is a function that converts a message from the channel into a kafka message. 
   This function must return a map containing {:topic :key :value} or {:topic :partition :key :value}
@@ -112,7 +106,3 @@
    (-async-producer-loop (start-producer args cli-options) handler))
   ([opts handler]
    (-async-producer-loop (start-producer opts) handler)))
-
-
-
-
